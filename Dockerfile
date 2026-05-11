@@ -45,6 +45,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-
 
 # Copia configuración PHP para permitir uploads razonables en WordPress/WooCommerce.
 COPY config/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+COPY config/wp-bootstrap.env /usr/local/etc/gg-wp-bootstrap.env
 
 # Copia scripts propios.
 COPY docker/entrypoint.sh /usr/local/bin/gg-entrypoint.sh
