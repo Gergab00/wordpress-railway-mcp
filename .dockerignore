@@ -1,0 +1,14 @@
+# Ruta sugerida: /.dockerignore
+#
+# Objetivo:
+# Evitar que archivos innecesarios entren al contexto de build Docker.
+
+.git
+.github
+node_modules
+vendor
+.DS_Store
+.env
+.env.*
+*.log
+README.local.md
