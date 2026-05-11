@@ -16,6 +16,7 @@ set -Eeuo pipefail
 
 WP_PATH="${WORDPRESS_PATH:-/var/www/html}"
 WP_CLI="wp --path=${WP_PATH} --allow-root"
+BOOTSTRAP_CONFIG_FILE="${WP_BOOTSTRAP_CONFIG_FILE:-/usr/local/etc/gg-wp-bootstrap.env}"
 
 log() {
   echo "[gg-wp-bootstrap] $*"
@@ -23,6 +24,26 @@ log() {
 
 is_true() {
   [[ "${1:-}" == "true" || "${1:-}" == "1" || "${1:-}" == "yes" ]]
+}
+
+load_bootstrap_defaults() {
+  if [[ ! -f "${BOOTSTRAP_CONFIG_FILE}" ]]; then
+    return 0
+  fi
+
+  log "Cargando defaults desde ${BOOTSTRAP_CONFIG_FILE}..."
+
+  while IFS='=' read -r key value || [[ -n "${key}" ]]; do
+    key="$(echo "${key}" | xargs)"
+
+    if [[ -z "${key}" || "${key}" == \#* ]]; then
+      continue
+    fi
+
+    if [[ "${key}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ && -z "${!key+x}" ]]; then
+      export "${key}=${value}"
+    fi
+  done < "${BOOTSTRAP_CONFIG_FILE}"
 }
 
 wait_for_wordpress_files() {
@@ -131,6 +152,26 @@ install_theme_from_wporg() {
   fi
 }
 
+install_themes_from_wporg_list() {
+  local themes_csv="${1:-}"
+
+  if [[ -z "${themes_csv}" ]]; then
+    return 0
+  fi
+
+  IFS=',' read -ra themes <<< "${themes_csv}"
+
+  for slug in "${themes[@]}"; do
+    slug="$(echo "${slug}" | xargs)"
+
+    if [[ -z "${slug}" ]]; then
+      continue
+    fi
+
+    install_theme_from_wporg "${slug}" "false"
+  done
+}
+
 install_mcp_adapter() {
   local version="${MCP_ADAPTER_VERSION:-v0.5.0}"
   local url="${MCP_ADAPTER_ZIP_URL:-https://github.com/WordPress/mcp-adapter/releases/download/${version}/mcp-adapter.zip}"
@@ -236,6 +277,8 @@ configure_permalink_structure() {
 }
 
 main() {
+  load_bootstrap_defaults
+
   wait_for_wordpress_files
   wait_for_database
 
@@ -251,14 +294,15 @@ main() {
 
   install_plugin_from_wporg "woocommerce"
   install_theme_from_wporg "storefront" "${WP_ACTIVATE_STOREFRONT:-true}"
-
-  install_mcp_adapter
-
-  # Este plugin está en WordPress.org y requiere WordPress 6.9+, MCP Adapter y PHP 8.0+.
-  install_plugin_from_wporg "enable-abilities-for-mcp"
+  install_themes_from_wporg_list "${WP_THEME_SLUGS:-}"
 
   install_git_repos "plugin" "${WP_CUSTOM_PLUGIN_REPOS:-}"
   install_git_repos "theme" "${WP_CUSTOM_THEME_REPOS:-}"
+
+  install_mcp_adapter || log "WARNING: No se pudo instalar MCP Adapter; se continua con el bootstrap."
+
+  # Este plugin está en WordPress.org y requiere WordPress 6.9+, MCP Adapter y PHP 8.0+.
+  install_plugin_from_wporg "enable-abilities-for-mcp" || log "WARNING: No se pudo instalar enable-abilities-for-mcp; se continua con el bootstrap."
 
   configure_permalink_structure
 
