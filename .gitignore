@@ -1,0 +1,53 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!env.example
+wp-config.php
+wp-config-local.php
+
+# Dependency directories
+node_modules/
+vendor/
+
+# WordPress generated/runtime content
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup*/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/advanced-cache.php
+wp-content/debug.log
+
+# Database and backup dumps
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*.backup
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+*.seed
+
+# Local development and tooling
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.temp
+.cache/
+.sass-cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
